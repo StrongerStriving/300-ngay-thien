@@ -267,12 +267,6 @@
             }
         }
 
-        // Lưu ghi chú hàng ngày
-        saveNoteButton.addEventListener('click', () => {
-            const selectedDay = Object.keys(meditationData).length;
-            dailyNotes[`day-${selectedDay}`] = noteInput.value;
-            saveDailyNotes();
-            alert('Ghi chú đã được lưu!');
         });
 
         // Xóa toàn bộ dữ liệu
@@ -301,7 +295,7 @@
         // Render danh sách và cập nhật chuỗi ngày liên tục lần đầu
         generateTracker();
         updateStreak();
-    // Biến tham chiếu đến các phần tử pop-up
+   // Biến tham chiếu đến các phần tử pop-up
 const popup = document.getElementById('note-popup');
 const overlay = document.getElementById('popup-overlay');
 const popupNoteInput = document.getElementById('popup-note');
@@ -330,19 +324,19 @@ overlay.addEventListener('click', closePopup);
 
 // Hàm lưu ghi chú từ pop-up
 savePopupNoteButton.addEventListener('click', () => {
-    const noteContent = popupNoteInput.value.trim();
+    const noteContent = popupNoteInput.value.trim(); // Lấy nội dung ghi chú
     if (noteContent) {
         const note = {
-            date: new Date().toLocaleString('vi-VN'),
+            date: new Date().toLocaleString('vi-VN'), // Lấy thời gian hiện tại
             content: noteContent
         };
         if (!dailyNotes[selectedDayKey]) {
-            dailyNotes[selectedDayKey] = [];
+            dailyNotes[selectedDayKey] = []; // Tạo danh sách ghi chú cho ngày nếu chưa có
         }
-        dailyNotes[selectedDayKey].push(note);
-        saveDailyNotes();
-        renderNotes();
-        closePopup();
+        dailyNotes[selectedDayKey].push(note); // Thêm ghi chú vào danh sách
+        saveDailyNotes(); // Lưu vào localStorage
+        renderNotes(); // Cập nhật danh sách ghi chú
+        closePopup(); // Đóng pop-up
         alert('Ghi chú đã được lưu!');
     } else {
         alert('Vui lòng nhập nội dung ghi chú!');
@@ -384,6 +378,7 @@ function renderNotes() {
 
 // Gọi hàm renderNotes khi tải trang
 renderNotes();
+
 
     </script>
 </body>
