@@ -84,19 +84,6 @@
             font-size: 1.5rem;
             color: #0077b6;
         }
-        .notes {
-            margin-top: 2rem;
-        }
-        .notes textarea {
-            width: 100%;
-            height: 100px;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            resize: none;
-            background-color: #f0f8ff; /* Trắng xanh pastel */
-        }
         .buttons {
             display: flex;
             flex-direction: column;
@@ -132,41 +119,28 @@
         <div class="streak" id="streak">Chuỗi ngày liên tục: 0</div>
         <div class="message" id="message"></div>
         <div class="buttons">
-            <button id="save-note">Lưu Ghi Chú</button>
-            <button id="reset-data">Xóa Dữ Liệu</button>
             <button id="set-start-date">Thiết Lập Ngày Bắt Đầu</button>
+            <button id="reset-data">Xóa Dữ Liệu</button>
         </div>
     </div>
     <script>
         const tracker = document.getElementById('tracker');
         const streakDisplay = document.getElementById('streak');
         const messageDisplay = document.getElementById('message');
-        const noteInput = document.getElementById('daily-note');
-        const saveNoteButton = document.getElementById('save-note');
-        const resetButton = document.getElementById('reset-data');
         const setStartDateButton = document.getElementById('set-start-date');
+        const resetButton = document.getElementById('reset-data');
 
-        // Ngày bắt đầu
-        let startDate = new Date(localStorage.getItem('startDate')) || new Date(2025, 0, 13);
-
-        // Lấy dữ liệu từ localStorage
         let meditationData = JSON.parse(localStorage.getItem('meditationData')) || {};
-        let dailyNotes = JSON.parse(localStorage.getItem('dailyNotes')) || {};
+        let startDate = localStorage.getItem('startDate') ? new Date(localStorage.getItem('startDate')) : new Date();
 
-        // Hàm lưu dữ liệu vào localStorage
         function saveMeditationData() {
             localStorage.setItem('meditationData', JSON.stringify(meditationData));
-        }
-
-        function saveDailyNotes() {
-            localStorage.setItem('dailyNotes', JSON.stringify(dailyNotes));
         }
 
         function saveStartDate() {
             localStorage.setItem('startDate', startDate.toISOString());
         }
 
-        // Hàm tạo danh sách 300 ngày
         function generateTracker() {
             tracker.innerHTML = '';
             let currentDate = new Date(startDate);
@@ -186,24 +160,23 @@
                 daysElement.className = 'days';
 
                 for (let col = 1; col <= 10; col++) {
-                    const dayNumber = (row - 1) * 10 + col; // Số ngày từ 1 đến 300
+                    const dayNumber = (row - 1) * 10 + col;
                     const dayKey = `day-${dayNumber}`;
                     const dayElement = document.createElement('div');
                     dayElement.className = `day ${meditationData[dayKey] ? 'completed' : ''}`;
                     dayElement.textContent = dayNumber;
                     dayElement.addEventListener('click', () => toggleDay(dayKey, dayElement));
                     daysElement.appendChild(dayElement);
-
-                    // Tăng ngày lên 1
-                    currentDate.setDate(currentDate.getDate() + 1);
                 }
+
+                // Tăng ngày lên 10
+                currentDate.setDate(currentDate.getDate() + 10);
 
                 rowElement.appendChild(daysElement);
                 tracker.appendChild(rowElement);
             }
         }
 
-        // Hàm toggle trạng thái của một ngày
         function toggleDay(dayKey, element) {
             if (!meditationData[dayKey]) {
                 meditationData[dayKey] = true;
@@ -216,7 +189,6 @@
             updateStreak();
         }
 
-        // Hàm tính chuỗi ngày liên tục
         function updateStreak() {
             let streak = 0;
             let maxStreak = 0;
@@ -241,7 +213,6 @@
             checkMilestones(maxStreak);
         }
 
-        // Hàm kiểm tra các mốc quan trọng
         function checkMilestones(streak) {
             const milestones = [10, 40, 80, 100];
             if (milestones.includes(streak)) {
@@ -251,27 +222,6 @@
             }
         }
 
-        // Lưu ghi chú hàng ngày
-        saveNoteButton.addEventListener('click', () => {
-            const selectedDay = Object.keys(meditationData).length;
-            dailyNotes[`day-${selectedDay}`] = noteInput.value;
-            saveDailyNotes();
-            alert('Ghi chú đã được lưu!');
-        });
-
-        // Xóa toàn bộ dữ liệu
-        resetButton.addEventListener('click', () => {
-            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu không?')) {
-                localStorage.clear();
-                meditationData = {};
-                dailyNotes = {};
-                startDate = new Date(2025, 0, 13);
-                generateTracker();
-                updateStreak();
-            }
-        });
-
-        // Thiết lập lại ngày bắt đầu
         setStartDateButton.addEventListener('click', () => {
             const newDate = prompt('Nhập ngày bắt đầu (YYYY-MM-DD):');
             if (newDate) {
@@ -282,83 +232,18 @@
             }
         });
 
-        // Render danh sách và cập nhật chuỗi ngày liên tục lần đầu
+        resetButton.addEventListener('click', () => {
+            if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu không?')) {
+                localStorage.clear();
+                meditationData = {};
+                startDate = new Date();
+                generateTracker();
+                updateStreak();
+            }
+        });
+
         generateTracker();
         updateStreak();
-        const modal = document.getElementById('meditation-modal');
-    const noteTextarea = document.getElementById('meditation-note');
-    const saveNoteButton = document.getElementById('save-meditation-note');
-    const cancelNoteButton = document.getElementById('cancel-meditation-note');
-    const notesSection = document.querySelector('.container'); // Nơi hiển thị ghi chú
-    let selectedDayKey = null; // Lưu ngày được chọn
-
-    // Cập nhật hàm toggleDay
-    function toggleDay(dayKey, element) {
-        if (!meditationData[dayKey]) {
-            selectedDayKey = dayKey;
-            modal.style.display = 'flex'; // Hiển thị modal
-        } else {
-            delete meditationData[dayKey];
-            element.classList.remove('completed');
-            saveMeditationData();
-            updateStreak();
-        }
-    }
-
-    // Xử lý nút "Lưu"
-    saveNoteButton.addEventListener('click', () => {
-        const note = noteTextarea.value.trim();
-        if (note) {
-            meditationData[selectedDayKey] = true;
-            dailyNotes[selectedDayKey] = {
-                note: note,
-                timestamp: new Date().toLocaleString('vi-VN'),
-            };
-
-            saveMeditationData();
-            saveDailyNotes();
-
-            modal.style.display = 'none'; // Ẩn modal
-            noteTextarea.value = ''; // Xóa nội dung ghi chú
-            generateTracker();
-            updateStreak();
-            displayNotes();
-        }
-    });
-
-    // Xử lý nút "Hủy"
-    cancelNoteButton.addEventListener('click', () => {
-        modal.style.display = 'none';
-        noteTextarea.value = '';
-    });
-
-    // Hàm hiển thị ghi chú
-    function displayNotes() {
-        const existingNotes = document.querySelectorAll('.daily-note');
-        existingNotes.forEach(note => note.remove());
-
-        Object.keys(dailyNotes).forEach(dayKey => {
-            const noteData = dailyNotes[dayKey];
-            const noteElement = document.createElement('div');
-            noteElement.className = 'daily-note';
-            noteElement.style.marginTop = '1rem';
-            noteElement.style.padding = '1rem';
-            noteElement.style.backgroundColor = '#f0f8ff';
-            noteElement.style.border = '1px solid #ddd';
-            noteElement.style.borderRadius = '4px';
-
-            noteElement.innerHTML = `
-                <strong>Ngày ${dayKey.split('-')[1]}:</strong>
-                <p>${noteData.note}</p>
-                <small><em>Thời gian: ${noteData.timestamp}</em></small>
-            `;
-
-            notesSection.appendChild(noteElement);
-        });
-    }
-
-    // Gọi hàm hiển thị ghi chú khi tải trang
-    displayNotes();
     </script>
 </body>
 </html>
