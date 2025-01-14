@@ -84,6 +84,16 @@
             font-size: 1.5rem;
             color: #0077b6;
         }
+        .notes {
+            margin-top: 2rem;
+        }
+        .note-item {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            background-color: #f0f8ff; /* Trắng xanh pastel */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
         .buttons {
             display: flex;
             flex-direction: column;
@@ -106,6 +116,42 @@
         .buttons button:hover {
             background-color: #023e8a; /* Xanh dương đậm hơn */
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .modal-buttons button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .modal-buttons button:first-child {
+            background-color: #0077b6;
+            color: white;
+        }
+        .modal-buttons button:last-child {
+            background-color: #ddd;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -118,23 +164,48 @@
         </div>
         <div class="streak" id="streak">Chuỗi ngày liên tục: 0</div>
         <div class="message" id="message"></div>
+        <div class="notes" id="notes">
+            <h3>Ghi chú:</h3>
+        </div>
         <div class="buttons">
             <button id="set-start-date">Thiết Lập Ngày Bắt Đầu</button>
             <button id="reset-data">Xóa Dữ Liệu</button>
+        </div>
+    </div>
+    <!-- Modal Popup -->
+    <div id="meditation-modal" class="modal">
+        <div class="modal-content">
+            <h3>Hôm nay bạn đã thiền như thế nào?</h3>
+            <textarea id="meditation-note" placeholder="Nhập cảm nhận của bạn tại đây..."></textarea>
+            <div class="modal-buttons">
+                <button id="save-meditation-note">Lưu</button>
+                <button id="cancel-meditation-note">Hủy</button>
+            </div>
         </div>
     </div>
     <script>
         const tracker = document.getElementById('tracker');
         const streakDisplay = document.getElementById('streak');
         const messageDisplay = document.getElementById('message');
+        const notesSection = document.getElementById('notes');
         const setStartDateButton = document.getElementById('set-start-date');
         const resetButton = document.getElementById('reset-data');
+        const modal = document.getElementById('meditation-modal');
+        const noteTextarea = document.getElementById('meditation-note');
+        const saveNoteButton = document.getElementById('save-meditation-note');
+        const cancelNoteButton = document.getElementById('cancel-meditation-note');
 
         let meditationData = JSON.parse(localStorage.getItem('meditationData')) || {};
+        let dailyNotes = JSON.parse(localStorage.getItem('dailyNotes')) || {};
         let startDate = localStorage.getItem('startDate') ? new Date(localStorage.getItem('startDate')) : new Date();
+        let selectedDayKey = null;
 
         function saveMeditationData() {
             localStorage.setItem('meditationData', JSON.stringify(meditationData));
+        }
+
+        function saveDailyNotes() {
+            localStorage.setItem('dailyNotes', JSON.stringify(dailyNotes));
         }
 
         function saveStartDate() {
@@ -179,14 +250,46 @@
 
         function toggleDay(dayKey, element) {
             if (!meditationData[dayKey]) {
-                meditationData[dayKey] = true;
-                element.classList.add('completed');
+                selectedDayKey = dayKey;
+                modal.style.display = 'flex';
             } else {
                 delete meditationData[dayKey];
                 element.classList.remove('completed');
+                saveMeditationData();
+                updateStreak();
             }
-            saveMeditationData();
-            updateStreak();
+        }
+
+        saveNoteButton.addEventListener('click', () => {
+            const note = noteTextarea.value.trim();
+            if (note) {
+                const timestamp = new Date().toLocaleString('vi-VN');
+                meditationData[selectedDayKey] = true;
+                dailyNotes[selectedDayKey] = { note, timestamp };
+                saveMeditationData();
+                saveDailyNotes();
+                modal.style.display = 'none';
+                noteTextarea.value = '';
+                generateTracker();
+                updateStreak();
+                renderNotes();
+            }
+        });
+
+        cancelNoteButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+            noteTextarea.value = '';
+        });
+
+        function renderNotes() {
+            notesSection.innerHTML = '<h3>Ghi chú:</h3>';
+            Object.keys(dailyNotes).forEach(dayKey => {
+                const { note, timestamp } = dailyNotes[dayKey];
+                const noteItem = document.createElement('div');
+                noteItem.className = 'note-item';
+                noteItem.textContent = `Ngày ${dayKey.split('-')[1]} (${timestamp}): ${note}`;
+                notesSection.appendChild(noteItem);
+            });
         }
 
         function updateStreak() {
@@ -229,6 +332,7 @@
                 saveStartDate();
                 generateTracker();
                 updateStreak();
+                renderNotes();
             }
         });
 
@@ -236,14 +340,17 @@
             if (confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu không?')) {
                 localStorage.clear();
                 meditationData = {};
+                dailyNotes = {};
                 startDate = new Date();
                 generateTracker();
                 updateStreak();
+                renderNotes();
             }
         });
 
         generateTracker();
         updateStreak();
+        renderNotes();
     </script>
 </body>
 </html>
