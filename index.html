@@ -126,6 +126,18 @@
         300-Day Meditation Tracker
     </header>
     <div class="container">
+        <!-- Khung pop-up ghi chú -->
+<div id="note-popup" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); padding: 1rem; z-index: 1000;">
+    <h3>Ghi chú cảm nhận</h3>
+    <textarea id="popup-note" placeholder="Nhập cảm nhận của bạn tại đây..." style="width: 100%; height: 100px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; resize: none;"></textarea>
+    <div style="margin-top: 1rem; text-align: right;">
+        <button id="save-popup-note" style="padding: 0.5rem 1rem; background-color: #0077b6; color: white; border: none; border-radius: 4px; cursor: pointer;">Lưu Ghi Chú</button>
+        <button id="close-popup" style="padding: 0.5rem 1rem; background-color: #ddd; color: #333; border: none; border-radius: 4px; cursor: pointer; margin-left: 0.5rem;">Hủy</button>
+    </div>
+</div>
+<!-- Overlay để làm mờ nền khi hiển thị pop-up -->
+<div id="popup-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999;"></div>
+
         <div id="tracker">
             <!-- Các hàng sẽ được render ở đây -->
         </div>
@@ -289,6 +301,90 @@
         // Render danh sách và cập nhật chuỗi ngày liên tục lần đầu
         generateTracker();
         updateStreak();
+    // Biến tham chiếu đến các phần tử pop-up
+const popup = document.getElementById('note-popup');
+const overlay = document.getElementById('popup-overlay');
+const popupNoteInput = document.getElementById('popup-note');
+const savePopupNoteButton = document.getElementById('save-popup-note');
+const closePopupButton = document.getElementById('close-popup');
+let selectedDayKey = null; // Lưu ngày đang được chọn
+
+// Hàm hiển thị pop-up
+function showPopup(dayKey) {
+    selectedDayKey = dayKey;
+    popupNoteInput.value = ''; // Xóa nội dung cũ
+    popup.style.display = 'block';
+    overlay.style.display = 'block';
+}
+
+// Hàm ẩn pop-up
+function closePopup() {
+    popup.style.display = 'none';
+    overlay.style.display = 'none';
+    selectedDayKey = null; // Reset ngày
+}
+
+// Sự kiện đóng pop-up
+closePopupButton.addEventListener('click', closePopup);
+overlay.addEventListener('click', closePopup);
+
+// Hàm lưu ghi chú từ pop-up
+savePopupNoteButton.addEventListener('click', () => {
+    const noteContent = popupNoteInput.value.trim();
+    if (noteContent) {
+        const note = {
+            date: new Date().toLocaleString('vi-VN'),
+            content: noteContent
+        };
+        if (!dailyNotes[selectedDayKey]) {
+            dailyNotes[selectedDayKey] = [];
+        }
+        dailyNotes[selectedDayKey].push(note);
+        saveDailyNotes();
+        renderNotes();
+        closePopup();
+        alert('Ghi chú đã được lưu!');
+    } else {
+        alert('Vui lòng nhập nội dung ghi chú!');
+    }
+});
+
+// Cập nhật toggleDay để hiển thị pop-up sau khi chọn ngày
+function toggleDay(dayKey, element) {
+    if (!meditationData[dayKey]) {
+        meditationData[dayKey] = true;
+        element.classList.add('completed');
+        saveMeditationData();
+        updateStreak();
+        showPopup(dayKey); // Hiển thị pop-up lưu ghi chú
+    } else {
+        delete meditationData[dayKey];
+        element.classList.remove('completed');
+        saveMeditationData();
+        updateStreak();
+    }
+}
+
+// Hàm hiển thị danh sách ghi chú
+function renderNotes() {
+    const savedNotesContainer = document.getElementById('saved-notes');
+    savedNotesContainer.innerHTML = '<h3>Danh sách ghi chú:</h3>';
+    Object.keys(dailyNotes).forEach(dayKey => {
+        dailyNotes[dayKey].forEach(note => {
+            const noteItem = document.createElement('div');
+            noteItem.className = 'note-item';
+            noteItem.innerHTML = `
+                <div class="note-date">${note.date} (Ngày: ${dayKey.split('-')[1]})</div>
+                <div class="note-content">${note.content}</div>
+            `;
+            savedNotesContainer.appendChild(noteItem);
+        });
+    });
+}
+
+// Gọi hàm renderNotes khi tải trang
+renderNotes();
+
     </script>
 </body>
 </html>
